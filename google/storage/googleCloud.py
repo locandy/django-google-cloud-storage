@@ -8,9 +8,11 @@ import cloudstorage as gcs
 
 __author__ = 'ckopanos@redmob.gr'
 
+import logging
 
 class GoogleCloudStorage(Storage):
-
+    """
+    """
 
     def __init__(self, location=None, base_url=None):
         if location is None:
@@ -19,24 +21,43 @@ class GoogleCloudStorage(Storage):
         if base_url is None:
             base_url = settings.GOOGLE_CLOUD_STORAGE_URL
         self.base_url = base_url
-
+        
     def _open(self, name, mode='rb'):
         filename = self.location+"/"+name
-        gcs_file = gcs.open(filename,mode='r')
-        file = ContentFile(gcs_file.read())
-        gcs_file.close()
+        #logging.info("GCS-open %s", filename)
+        try:
+            gcs_file = gcs.open(filename,mode='r')
+            file = ContentFile(gcs_file.read())
+            gcs_file.close()
+        except gcs.errors.NotFoundError, e:
+            raise IOError('File does not exist: %s' % name)
+        except gcs.errors.Error, e:
+            logging.error(e) # DISPLAY READ PERMISSION & TIMEOUT PROBLEMS
+            raise IOError(e)
         return file
 
     def _save(self, name, content):
         filename = self.location+"/"+name
         filename = os.path.normpath(filename)
+        logging.info("GCS-save %s", filename)
+        #return name # METHOD DOES NOT WORK
         type, encoding = mimetypes.guess_type(name)
         #files are stored with public-read permissions. Check out the google acl options if you need to alter this.
-        gss_file = gcs.open(filename, mode='w', content_type=type, options={'x-goog-acl': 'public-read', 'cache-control': settings.GOOGLE_CLOUD_STORAGE_DEFAULT_CACHE_CONTROL,})
-        content.open()
-        gss_file.write(content.read())
-        content.close()
-        gss_file.close()
+        
+        try:
+            gss_file = gcs.open(filename, mode='w', content_type=type, 
+                                options={'x-goog-acl': 'public-read',
+                                'cache-control': settings.GOOGLE_CLOUD_STORAGE_DEFAULT_CACHE_CONTROL})
+            content.open()
+            gss_file.write(content.read())
+            content.close()
+            gss_file.close()
+        except gcs.errors.Error, e:
+            # import traceback
+            # logging.error(traceback.format_exc())
+            logging.error(e) # DISPLAY WRITE PERMISSION PROBLEMS
+            raise IOError(e)
+            
         return name
 
     def delete(self, name):
@@ -49,11 +70,15 @@ class GoogleCloudStorage(Storage):
     def exists(self, name):
         try:
             self.statFile(name)
+            logging.info("GCS-exists-yes %s", name)
             return True
-        except gcs.NotFoundError:
+        except gcs.NotFoundError, e:
+            logging.error(e)
+            logging.info("GCS-exists-no %s", name)
             return False
 
     def listdir(self, path=None):
+        #logging.info("GCS-listdir %s", path)
         directories, files = [], []
         bucketContents = gcs.listbucket(self.location,prefix=path)
         for entry in bucketContents:
@@ -88,14 +113,20 @@ class GoogleCloudStorage(Storage):
         return self.created_time(name)
 
     def url(self, name):
+        
         if settings.DEBUG:
             # we need this in order to display images, links to files, etc from the local appengine server
             filename = "/gs"+self.location+"/"+name
             key = create_gs_key(filename)
-            return "http://localhost:8000/blobstore/blob/"+key+"?display=inline"
-        return self.base_url+"/"+name
+            hostport = settings.get('GOOGLE_CLOUD_STORAGE_SDK_HOST', 'localhost:8000')
+            url = "http://"+hostport+"/blobstore/blob/"+key+"?display=inline"
+
+        url = self.base_url+"/"+name
+        #logging.info("GCS-url %s", url)
+        return url
 
 
     def statFile(self,name):
         filename = self.location+"/"+name
+        logging.info("GCS-stat %s", filename)
         return gcs.stat(filename)
