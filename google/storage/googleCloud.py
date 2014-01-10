@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 from google.appengine.api.blobstore import create_gs_key
-import cloudstorage as gcs
+import cloudstorage
 
 __author__ = 'ckopanos@redmob.gr'
 
@@ -26,12 +26,12 @@ class GoogleCloudStorage(Storage):
         filename = self.location+"/"+name
         #logging.info("GCS-open %s", filename)
         try:
-            gcs_file = gcs.open(filename,mode='r')
+            gcs_file = cloudstorage.open(filename,mode='r')
             file = ContentFile(gcs_file.read())
             gcs_file.close()
-        except gcs.errors.NotFoundError, e:
+        except cloudstorage.errors.NotFoundError, e:
             raise IOError('File does not exist: %s' % name)
-        except gcs.errors.Error, e:
+        except cloudstorage.errors.Error, e:
             logging.error(e) # DISPLAY READ PERMISSION & TIMEOUT PROBLEMS
             raise IOError(e)
         return file
@@ -45,14 +45,14 @@ class GoogleCloudStorage(Storage):
         #files are stored with public-read permissions. Check out the google acl options if you need to alter this.
         
         try:
-            gss_file = gcs.open(filename, mode='w', content_type=type, 
+            gss_file = cloudstorage.open(filename, mode='w', content_type=type, 
                                 options={'x-goog-acl': 'public-read',
                                 'cache-control': settings.GOOGLE_CLOUD_STORAGE_DEFAULT_CACHE_CONTROL})
             content.open()
             gss_file.write(content.read())
             content.close()
             gss_file.close()
-        except gcs.errors.Error, e:
+        except cloudstorage.errors.Error, e:
             # import traceback
             # logging.error(traceback.format_exc())
             logging.error(e) # DISPLAY WRITE PERMISSION PROBLEMS
@@ -63,8 +63,8 @@ class GoogleCloudStorage(Storage):
     def delete(self, name):
         filename = self.location+"/"+name
         try:
-            gcs.delete(filename)
-        except gcs.NotFoundError:
+            cloudstorage.delete(filename)
+        except cloudstorage.NotFoundError:
             pass
 
     def exists(self, name):
@@ -72,7 +72,7 @@ class GoogleCloudStorage(Storage):
             self.statFile(name)
             logging.info("GCS-exists-yes %s", name)
             return True
-        except gcs.NotFoundError, e:
+        except cloudstorage.NotFoundError, e:
             logging.error(e)
             logging.info("GCS-exists-no %s", name)
             return False
@@ -80,7 +80,7 @@ class GoogleCloudStorage(Storage):
     def listdir(self, path=None):
         #logging.info("GCS-listdir %s", path)
         directories, files = [], []
-        bucketContents = gcs.listbucket(self.location,prefix=path)
+        bucketContents = cloudstorage.listbucket(self.location,prefix=path)
         for entry in bucketContents:
             filePath = entry.filename
             head, tail = os.path.split(filePath)
@@ -129,4 +129,4 @@ class GoogleCloudStorage(Storage):
     def statFile(self,name):
         filename = self.location+"/"+name
         logging.info("GCS-stat %s", filename)
-        return gcs.stat(filename)
+        return cloudstorage.stat(filename)
