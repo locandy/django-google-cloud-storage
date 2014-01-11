@@ -24,17 +24,19 @@ class GoogleCloudStorage(Storage):
         
     def _open(self, name, mode='rb'):
         filename = self.location+"/"+name
-        #logging.info("GCS-open %s", filename)
+        logging.info("GCS-open %s", filename)
         try:
             gcs_file = cloudstorage.open(filename,mode='r')
-            file = ContentFile(gcs_file.read())
+            file_d = ContentFile(gcs_file.read())
             gcs_file.close()
         except cloudstorage.errors.NotFoundError, e:
+            logging.exception("GCS-open FILE NOT FOUND")
             raise IOError('File does not exist: %s' % name)
         except cloudstorage.errors.Error, e:
             logging.error(e) # DISPLAY READ PERMISSION & TIMEOUT PROBLEMS
             raise IOError(e)
-        return file
+        logging.info("GCS-open returned %i bytes.", file_d.size)
+        return file_d
 
     def _save(self, name, content):
         filename = self.location+"/"+name
@@ -62,6 +64,7 @@ class GoogleCloudStorage(Storage):
 
     def delete(self, name):
         filename = self.location+"/"+name
+        logging.info("GCS-delete %s", name)
         try:
             cloudstorage.delete(filename)
         except cloudstorage.NotFoundError:
@@ -106,6 +109,7 @@ class GoogleCloudStorage(Storage):
         raise NotImplementedError
 
     def created_time(self, name):
+        logging.info("GCS-created_time %s", name)
         stats = self.statFile(name)
         return stats.st_ctime
 
@@ -122,11 +126,11 @@ class GoogleCloudStorage(Storage):
             url = "http://"+hostport+"/blobstore/blob/"+key+"?display=inline"
 
         url = self.base_url+"/"+name
-        #logging.info("GCS-url %s", url)
+        logging.info("GCS-url %s", url)
         return url
 
 
-    def statFile(self,name):
+    def statFile(self, name):
         filename = self.location+"/"+name
         logging.info("GCS-stat %s", filename)
         return cloudstorage.stat(filename)
