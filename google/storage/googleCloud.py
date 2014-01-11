@@ -12,6 +12,8 @@ import logging
 
 class GoogleCloudStorage(Storage):
     """
+    To debug permissions or performance problems replace all occurances of '#logging.' with 'logging.'
+    Uncached remote API-calls of cloud services are much slower than traditional file system access calls.
     """
 
     def __init__(self, location=None, base_url=None):
@@ -72,7 +74,7 @@ class GoogleCloudStorage(Storage):
 
     def exists(self, name):
         try:
-            self.statFile(name)
+            self._statFile_(name)
             logging.info("GoogleCloudStorage-exists-yes %s", name)
             return True
         except cloudstorage.NotFoundError, e:
@@ -102,7 +104,7 @@ class GoogleCloudStorage(Storage):
 
     def size(self, name):
         logging.info("GoogleCloudStorage-size %s", name)
-        stats = self.statFile(name)
+        stats = self._statFile_(name)
         return stats.st_size
 
     def accessed_time(self, name):
@@ -115,7 +117,7 @@ class GoogleCloudStorage(Storage):
         """
         logging.info("GoogleCloudStorage-created_time %s", name)
         try:
-            stats = self.statFile(name)
+            stats = self._statFile_(name)
             return datetime.datetime.fromtimestamp(stats.st_ctime)
         except cloudstorage.NotFoundError:
             raise OSError() # convert to standard filesystem error 
@@ -127,7 +129,9 @@ class GoogleCloudStorage(Storage):
         return self.created_time(name)
 
     def url(self, name):
-        
+        """
+        Returns the public URL to a cloudstorage-website bucket.
+        """
         if settings.DEBUG:
             # we need this in order to display images, links to files, etc from the local appengine server
             filename = "/gs"+self.location+"/"+name
@@ -136,12 +140,12 @@ class GoogleCloudStorage(Storage):
             url = "http://"+hostport+"/blobstore/blob/"+key+"?display=inline"
 
         url = self.base_url+"/"+name
-        logging.info("GoogleCloudStorage-url %s", url)
+        #logging.info("GoogleCloudStorage-url %s", url)
         return url
 
-    def statFile(self, name):
+    def _statFile_(self, name):
         """
-        Primitive method.
+        Primitive, private method. Returns a Google Stat object.
         """
         filename = self.location+"/"+name
         logging.info("GoogleCloudStorage-stat %s", filename)
