@@ -1,4 +1,4 @@
-import mimetypes
+import mimetypes, datetime
 import os
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -24,24 +24,24 @@ class GoogleCloudStorage(Storage):
         
     def _open(self, name, mode='rb'):
         filename = self.location+"/"+name
-        logging.info("GCS-open %s", filename)
+        logging.info("GoogleCloudStorage-open %s", filename)
         try:
             gcs_file = cloudstorage.open(filename,mode='r')
             file_d = ContentFile(gcs_file.read())
             gcs_file.close()
         except cloudstorage.errors.NotFoundError, e:
-            logging.exception("GCS-open FILE NOT FOUND")
+            logging.warning("GoogleCloudStorage-open FILE NOT FOUND %s", name)
             raise IOError('File does not exist: %s' % name)
         except cloudstorage.errors.Error, e:
             logging.error(e) # DISPLAY READ PERMISSION & TIMEOUT PROBLEMS
             raise IOError(e)
-        logging.info("GCS-open returned %i bytes.", file_d.size)
+        logging.info("GoogleCloudStorage-open returned %i bytes.", file_d.size)
         return file_d
 
     def _save(self, name, content):
         filename = self.location+"/"+name
         filename = os.path.normpath(filename)
-        logging.info("GCS-save %s", filename)
+        logging.info("GoogleCloudStorage-save %s", filename)
         #return name # METHOD DOES NOT WORK
         type, encoding = mimetypes.guess_type(name)
         #files are stored with public-read permissions. Check out the google acl options if you need to alter this.
@@ -64,7 +64,7 @@ class GoogleCloudStorage(Storage):
 
     def delete(self, name):
         filename = self.location+"/"+name
-        logging.info("GCS-delete %s", name)
+        logging.warning("GoogleCloudStorage-delete %s", name)
         try:
             cloudstorage.delete(filename)
         except cloudstorage.NotFoundError:
@@ -73,15 +73,14 @@ class GoogleCloudStorage(Storage):
     def exists(self, name):
         try:
             self.statFile(name)
-            logging.info("GCS-exists-yes %s", name)
+            logging.info("GoogleCloudStorage-exists-yes %s", name)
             return True
         except cloudstorage.NotFoundError, e:
-            logging.error(e)
-            logging.info("GCS-exists-no %s", name)
+            logging.warning("GoogleCloudStorage-exists-no %s", name)
             return False
 
     def listdir(self, path=None):
-        #logging.info("GCS-listdir %s", path)
+        logging.info("GoogleCloudStorage-listdir %s", path)
         directories, files = [], []
         bucketContents = cloudstorage.listbucket(self.location,prefix=path)
         for entry in bucketContents:
@@ -102,18 +101,29 @@ class GoogleCloudStorage(Storage):
         return directories, files
 
     def size(self, name):
+        logging.info("GoogleCloudStorage-size %s", name)
         stats = self.statFile(name)
         return stats.st_size
 
     def accessed_time(self, name):
+        logging.error("GoogleCloudStorage-ACCESSED NOT IMPLEMENTED %s", name)
         raise NotImplementedError
 
     def created_time(self, name):
-        logging.info("GCS-created_time %s", name)
-        stats = self.statFile(name)
-        return stats.st_ctime
+        """
+        Returns a datetime object containing the creation time of the file. 
+        """
+        logging.info("GoogleCloudStorage-created_time %s", name)
+        try:
+            stats = self.statFile(name)
+            return datetime.datetime.fromtimestamp(stats.st_ctime)
+        except cloudstorage.NotFoundError:
+            raise OSError() # convert to standard filesystem error 
 
     def modified_time(self, name):
+        """
+        Returns created datetime. Files cannot be modified on cloud storage.
+        """
         return self.created_time(name)
 
     def url(self, name):
@@ -126,11 +136,13 @@ class GoogleCloudStorage(Storage):
             url = "http://"+hostport+"/blobstore/blob/"+key+"?display=inline"
 
         url = self.base_url+"/"+name
-        logging.info("GCS-url %s", url)
+        logging.info("GoogleCloudStorage-url %s", url)
         return url
 
-
     def statFile(self, name):
+        """
+        Primitive method.
+        """
         filename = self.location+"/"+name
-        logging.info("GCS-stat %s", filename)
+        logging.info("GoogleCloudStorage-stat %s", filename)
         return cloudstorage.stat(filename)
