@@ -22,7 +22,9 @@ unzip the file and copy the cloudstorage folder, found in the src folder, and in
 Installation
 -------------
 
-Just copy the google folder in your project directory
+  # Install cloudstorage by copying it to your appengine app root directory (where the app.yaml resides). https://code.google.com/p/appengine-gcs-client/downloads/list
+  # Copy the googleCloud.py your appengine app root directory (where the app.yaml resides).
+  # After successful config disable the logging in the googleCloud.py file by commenting out all logging
 
 Configuration
 -------------
@@ -32,8 +34,21 @@ On your django settings.py file you need to add the following settings
     GOOGLE_CLOUD_STORAGE_BUCKET = '/your_bucket_name' # the name of the bucket you have created from the google cloud storage console
     GOOGLE_CLOUD_STORAGE_URL = 'http://storage.googleapis.com/bucket' #whatever the ulr for accessing your cloud storgage bucket
     GOOGLE_CLOUD_STORAGE_DEFAULT_CACHE_CONTROL = 'public, max-age: 7200' # default cache control headers for your files
-    GOOGLE_CLOUD_STORAGE_SDK_HOST = 'localhost:8000' # serve local urls
+    # optional: GOOGLE_CLOUD_STORAGE_SDK_HOST = 'localhost:8000' # serve local urls
+    GOOGLE_CLOUD_STORAGE_LOGGING = True # log every access for profiling or debugging
     
 And finally declare the file storage backend you will use on your settings.py file
 
-    DEFAULT_FILE_STORAGE = 'google.storage.googleCloud.GoogleCloudStorage'
+    DEFAULT_FILE_STORAGE = 'googleCloud.GoogleCloudStorage'
+    
+IMPORTANT NOTES
+---------------
+
+Cloud storage is about 1000x slower than file access. Be sure to use a cloud compatible django based software.
+To allow easy configuration and profiling in error-message hostile environments (e.g. django-CMS) every single request is logged when GOOGLE_CLOUD_STORAGE_LOGGING = True.
+
+Known performance:
+  * django-CMS (6 seconds per request because of easy-thumbnails): https://github.com/SmileyChris/easy-thumbnails/issues/283
+
+
+
