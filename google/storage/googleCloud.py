@@ -144,6 +144,13 @@ class GoogleCloudStorage(Storage):
         stats = self._statFile_(name)
         return stats.st_size
 
+    #def path(self, name):
+    #    """
+    #    For storage systems that aren't accessible from the local filesystem, 
+    #    this will raise NotImplementedError instead.
+    #    """
+    #    raise NotImplementedError        
+
     def accessed_time(self, name):
         """
         raises NotImplementedError

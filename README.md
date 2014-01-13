@@ -22,9 +22,9 @@ unzip the file and copy the cloudstorage folder, found in the src folder, and in
 Installation
 -------------
 
-  # Install cloudstorage by copying it to your appengine app root directory (where the app.yaml resides). https://code.google.com/p/appengine-gcs-client/downloads/list
-  # Copy the googleCloud.py your appengine app root directory (where the app.yaml resides).
-  # After successful config disable the logging in the googleCloud.py file by commenting out all logging
+  1. Install cloudstorage by copying it to your appengine app root directory (where the app.yaml resides). https://code.google.com/p/appengine-gcs-client/downloads/list
+  1. Copy the googleCloud.py your appengine app root directory (where the app.yaml resides).
+  1. After successful config disable the logging in the googleCloud.py file by commenting out all logging
 
 Configuration
 -------------
@@ -44,11 +44,13 @@ And finally declare the file storage backend you will use on your settings.py fi
 IMPORTANT NOTES
 ---------------
 
-Cloud storage is about 1000x slower than file access. Be sure to use a cloud compatible django based software.
-To allow easy configuration and profiling in error-message hostile environments (e.g. django-CMS) every single request is logged when GOOGLE_CLOUD_STORAGE_LOGGING = True.
+Cloud storage is about 1000 times slower than file access because every request 
+will be a remote procedure call. Be sure to use a cloud compatible django based software.
+To allow easy configuration and profiling in error-message hostile environments 
+(e.g. django-CMS) every single request is logged when GOOGLE_CLOUD_STORAGE_LOGGING = True.
 
 Known performance:
-  * django-CMS (6 seconds per request because of easy-thumbnails): https://github.com/SmileyChris/easy-thumbnails/issues/283
+  * django-CMS (6-7 seconds per request because of easy-thumbnails's unoptimized file accesses on every request): https://github.com/SmileyChris/easy-thumbnails/issues/283
 
 
 
