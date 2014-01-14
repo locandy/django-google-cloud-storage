@@ -62,7 +62,7 @@ class GoogleCloudStorage(Storage):
         filename = os.path.normpath(filename)
         
         if settings.GOOGLE_CLOUD_STORAGE_LOGGING:
-            logging.info("GoogleCloudStorage-save %s", filename)
+            logging.warning("GoogleCloudStorage-save %s", filename)
         
         type, encoding = mimetypes.guess_type(name)
         #files are stored with public-read permissions. Check out the google acl options if you need to alter this.
@@ -204,7 +204,7 @@ class GoogleCloudStorage(Storage):
         """
         filename = self.location+"/"+name
         
-        if settings.GOOGLE_CLOUD_STORAGE_LOGGING:
-            logging.info("GoogleCloudStorage-stat %s", filename)
+        #if settings.GOOGLE_CLOUD_STORAGE_LOGGING:
+        #    logging.info("GoogleCloudStorage-stat %s", filename)
             
         return cloudstorage.stat(filename)
