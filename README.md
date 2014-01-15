@@ -50,7 +50,9 @@ To allow easy configuration and profiling in error-message hostile environments
 (e.g. django-CMS) every single request is logged when GOOGLE_CLOUD_STORAGE_LOGGING = True.
 
 Known performance:
-  * django-CMS (6-7 seconds per request because of easy-thumbnails's unoptimized file accesses on every request): https://github.com/SmileyChris/easy-thumbnails/issues/283
 
+django-CMS 4 seconds(!) per uncached request with optimized image processor and 
+remore MySQL DB (e.g. https://github.com/SmileyChris/easy-thumbnails/issues/283 Version 1.5+)
+The bad perormance is probably due to 100 MySQL queries per page rendering.
 
 

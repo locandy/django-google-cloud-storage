@@ -30,13 +30,23 @@ class GoogleCloudStorage(Storage):
         and return a django.core.files.base.ContentFile (string buffer)
         This is not suitable for huge files.
         """
+
+        # this code forces a stack trace and extracts the last 30 calls
+        #try:
+        #    logging.crashme()
+        #except Exception:
+        #    import traceback
+        #    sta = traceback.extract_stack()
+        #    logging.error(traceback.format_list(sta[len(sta)-30:]))
+        #    return ContentFile("")
+            
         filename = self.location+"/"+name
         
         if settings.GOOGLE_CLOUD_STORAGE_LOGGING:
             logging.info("GoogleCloudStorage-open %s", filename)
             
         try:
-            # Untested alternative?
+            # Untested faster alternative?
             # return cloudstorage.open(filename,mode='r')
             
             gcs_file = cloudstorage.open(filename,mode='r')
