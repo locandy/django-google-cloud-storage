@@ -5,9 +5,12 @@ A file storage backend for django appengine projects that uses google cloud stor
 
 If you run your projects on Google's appengine and you are using the django framework you might need this
 file backend since there is no way to upload files, images, etc on appengine. Although solutions exist for
-the amazon cloud storage i have not found a file backend for google cloud storage. This backend does work
-with google cloud storage, although in early development. I have used it with regular file uploads and with
-file manager solutions such as django-filer. The code as it is right now stores files for public use (i.e. a web site's images)
+the amazon cloud storage I have not found a file backend for google cloud storage. This backend does work
+with google cloud storage. I have used it with regular file uploads and with file manager solutions 
+such as django-filer. The code as it is right now stores files for public use (i.e. a web site's images)
+You might want to configure the bucket as public website with gsutil. Be aware that many django modules
+do not expect file access times of 100ms and produce to many file system accesses to perform well. SDK
+is not a good testing environment for performance.
 
 Prerequisites
 -------------
